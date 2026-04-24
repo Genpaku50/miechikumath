@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>計算バトル - 攻撃力測定</title>
+    <style>
+        :root { --primary: #ff4500; --secondary: #ffd700; }
+        body { font-family: 'Arial Black', sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; overflow-x: hidden; }
+        #game-container { max-width: 450px; margin: 0 auto; padding: 20px; background: #2a2a2a; border: 4px solid #444; border-radius: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        
+        /* 設定画面 */
+        .settings-box { background: #333; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: left; border-left: 5px solid var(--primary); }
+        h3 { font-size: 14px; margin: 0 0 10px 0; color: var(--secondary); }
+        .checkbox-group label, .radio-group label { display: inline-block; margin-right: 12px; font-size: 16px; cursor: pointer; padding: 5px; }
+
+        /* ゲーム画面 */
+        #question { font-size: 60px; margin: 15px 0; text-shadow: 3px 3px 0 #000; color: #fff; }
+        #timer { font-size: 28px; color: #ff4500; text-shadow: 0 0 10px #ff4500; }
+        #score-display { font-size: 20px; color: var(--secondary); margin-bottom: 10px; }
+        
+        /* ボタン */
+        #choices { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .choice-btn { 
+            flex: 1 1 40%; font-size: 32px; padding: 15px; background: linear-gradient(#555, #222); color: white; 
+            border: 3px solid #666; border-radius: 15px; cursor: pointer;
+        }
+        .choice-btn:active { transform: scale(0.95); background: #444; }
+        
+        /* 派手な演出用 */
+        .start-btn { 
+            font-size: 24px; padding: 15px; background: linear-gradient(var(--primary), #b32d00); color: white; 
+            border: none; border-radius: 50px; cursor: pointer; width: 100%; font-weight: bold; box-shadow: 0 5px 0 #802000;
+        }
+        .start-btn:active { transform: translateY(3px); box-shadow: none; }
+
+        /* 結果画面 */
+        #result-screen h2 { font-size: 30px; color: var(--primary); margin-bottom: 0; }
+        .atk-value { font-size: 70px; color: var(--secondary); text-shadow: 0 0 20px #ff8c00; margin: 10px 0; display: block; animation: zoomIn 0.5s; }
+        .rank-badge { font-size: 100px; font-style: italic; color: #fff; text-shadow: 0 0 30px #fff; display: block; margin-top: -20px; }
+        
+        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 10% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -2px); } }
+        .shake { animation: shake 0.2s infinite; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <h1 style="color:var(--secondary)">MATH BATTLE</h1>
+        <div class="settings-box">
+            <div class="setting-group">
+                <h3>計算スキルを選択</h3>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="op-add" checked> ＋</label>
+                    <label><input type="checkbox" id="op-sub" checked> －</label>
+                    <label><input type="checkbox" id="op-mul" checked> ×</label>
+                    <label><input type="checkbox" id="op-div" checked> ÷</label>
+                </div>
+            </div>
+            <div class="setting-group">
+                <h3>ターゲット数（選択肢）</h3>
+                <div class="radio-group">
+                    <label><input type="radio" name="choiceCount" value="2"> 2</label>
+                    <label><input type="radio" name="choiceCount" value="3"> 3</label>
+                    <label><input type="radio" name="choiceCount" value="4" checked> 4</label>
+                </div>
+            </div>
+        </div>
+        <button class="start-btn" onclick="startGame()">バトル開始！</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div id="timer">TIME: 30</div>
+        <div id="score-display">KILL COUNT: 0</div>
+        <div id="question"></div>
+        <div id="choices"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2>TOTAL ATTACK POWER</h2>
+        <span id="final-atk" class="atk-value">0</span>
+        <div id="rank-display" class="rank-badge">-</div>
+        <p id="multiplier-info" style="color:#aaa; font-size:12px;"></p>
+        <button class="start-btn" onclick="location.reload()">再挑戦する</button>
+    </div>
+</div>
+
+<script>
+    let score = 0;
+    let timeLeft = 30;
+    let correctAnswer;
+    let timerId;
+    let activeOps = [];
+    let numChoices = 4;
+
+    function startGame() {
+        activeOps = [];
+        if (document.getElementById('op-add').checked) activeOps.push('+');
+        if (document.getElementById('op-sub').checked) activeOps.push('-');
+        if (document.getElementById('op-mul').checked) activeOps.push('×');
+        if (document.getElementById('op-div').checked) activeOps.push('÷');
+
+        if (activeOps.length === 0) { alert('スキルを選んでください！'); return; }
+
+        numChoices = parseInt(document.querySelector('input[name="choiceCount"]:checked').value);
+
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        score = 0;
+        timeLeft = 30;
+        nextQuestion();
+        
+        timerId = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').textContent = `TIME: ${timeLeft}`;
+            if (timeLeft <= 5) document.body.classList.add('shake');
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+    }
+
+    function nextQuestion() {
+        const op = activeOps[Math.floor(Math.random() * activeOps.length)];
+        let n1, n2;
+
+        if (op === '+') { n1 = Math.floor(Math.random() * 20) + 1; n2 = Math.floor(Math.random() * 20) + 1; correctAnswer = n1 + n2; }
+        else if (op === '-') { n1 = Math.floor(Math.random() * 20) + 10; n2 = Math.floor(Math.random() * 10) + 1; correctAnswer = n1 - n2; }
+        else if (op === '×') { n1 = Math.floor(Math.random() * 9) + 2; n2 = Math.floor(Math.random() * 9) + 2; correctAnswer = n1 * n2; }
+        else if (op === '÷') { n2 = Math.floor(Math.random() * 9) + 2; correctAnswer = Math.floor(Math.random() * 9) + 2; n1 = n2 * correctAnswer; }
+
+        document.getElementById('question').textContent = `${n1}${op.replace('×','×').replace('÷','÷')}${n2}`;
+
+        let options = [correctAnswer];
+        while (options.length < numChoices) {
+            let offset = Math.floor(Math.random() * 11) - 5;
+            let wrong = correctAnswer + offset;
+            if (wrong >= 0 && !options.includes(wrong)) options.push(wrong);
+        }
+
+        options.sort(() => Math.random() - 0.5);
+        const choicesDiv = document.getElementById('choices');
+        choicesDiv.innerHTML = '';
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.textContent = opt;
+            btn.onclick = () => {
+                if (opt === correctAnswer) {
+                    score++;
+                    document.getElementById('score-display').textContent = `KILL COUNT: ${score}`;
+                    nextQuestion();
+                } else {
+                    document.body.style.backgroundColor = '#600';
+                    setTimeout(() => document.body.style.backgroundColor = '#1a1a1a', 100);
+                }
+            };
+            choicesDiv.appendChild(btn);
+        });
+    }
+
+    function endGame() {
+        clearInterval(timerId);
+        document.body.classList.remove('shake');
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+
+        // 攻撃力計算ロジック
+        let choiceMult = 1 + (numChoices - 2) * 0.2; // 2択:1.0, 3択:1.2, 4択:1.4
+        let opBonus = 0;
+        if (activeOps.includes('+')) opBonus += 0.1;
+        if (activeOps.includes('-')) opBonus += 0.2;
+        if (activeOps.includes('×')) opBonus += 0.4;
+        if (activeOps.includes('÷')) opBonus += 0.6;
+        
+        let finalAtk = Math.floor(score * 100 * choiceMult * (1 + opBonus));
+        
+        // カウントアップ演出
+        let currentAtk = 0;
+        let step = Math.ceil(finalAtk / 30);
+        let counter = setInterval(() => {
+            currentAtk += step;
+            if (currentAtk >= finalAtk) {
+                currentAtk = finalAtk;
+                clearInterval(counter);
+                showRank(finalAtk);
+            }
+            document.getElementById('final-atk').textContent = currentAtk.toLocaleString();
+        }, 30);
+
+        document.getElementById('multiplier-info').textContent = `難易度倍率: x${(choiceMult * (1 + opBonus)).toFixed(2)}`;
+    }
+
+    function showRank(atk) {
+        let rank = 'F';
+        let color = '#fff';
+        if (atk >= 5000) { rank = 'SSS'; color = '#ff00ff'; }
+        else if (atk >= 4000) { rank = 'SS'; color = '#ff4500'; }
+        else if (atk >= 3000) { rank = 'S'; color = '#ffd700'; }
+        else if (atk >= 2000) { rank = 'A'; color = '#ff69b4'; }
+        else if (atk >= 1500) { rank = 'B'; color = '#00ff00'; }
+        else if (atk >= 1000) { rank = 'C'; color = '#00ffff'; }
+        else if (atk >= 500) { rank = 'D'; color = '#aaa'; }
+        
+        const rd = document.getElementById('rank-display');
+        rd.textContent = rank;
+        rd.style.color = color;
+        rd.style.textShadow = `0 0 30px ${color}`;
+    }
+</script>
+</body>
+</html>
