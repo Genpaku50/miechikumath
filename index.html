@@ -6,21 +6,28 @@
     <title>計算バトル - 攻撃力測定</title>
     <style>
         :root { --primary: #ff4500; --secondary: #ffd700; }
-        body { font-family: 'Arial Black', sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; overflow-x: hidden; }
+        body { font-family: 'Arial Black', sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 15px; overflow-x: hidden; }
         #game-container { max-width: 450px; margin: 0 auto; padding: 20px; background: #2a2a2a; border: 4px solid #444; border-radius: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         
+        /* ルール解説ボックス */
+        .rules-box { background: rgba(0,0,0,0.5); border: 1px dashed var(--primary); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: left; font-size: 13px; color: #ddd; line-height: 1.5; }
+        .rules-box h4 { margin: 0 0 8px 0; color: var(--primary); font-size: 15px; text-align: center; letter-spacing: 2px; }
+        .rules-box ul { margin: 0; padding-left: 20px; }
+        .rules-box li { margin-bottom: 5px; }
+        .highlight { color: var(--secondary); font-weight: bold; }
+
         /* 設定画面 */
         .settings-box { background: #333; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: left; border-left: 5px solid var(--primary); }
         h3 { font-size: 14px; margin: 0 0 10px 0; color: var(--secondary); }
         .checkbox-group label, .radio-group label { display: inline-block; margin-right: 12px; font-size: 16px; cursor: pointer; padding: 5px; }
 
         /* ゲーム画面 */
-        #question { font-size: 60px; margin: 15px 0; text-shadow: 3px 3px 0 #000; color: #fff; }
+        #question { font-size: 60px; margin: 15px 0; text-shadow: 3px 3px 0 #000; color: #fff; height: 80px; }
         #timer { font-size: 28px; color: #ff4500; text-shadow: 0 0 10px #ff4500; }
         #score-display { font-size: 20px; color: var(--secondary); margin-bottom: 10px; }
         
         /* ボタン */
-        #choices { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        #choices { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 140px; }
         .choice-btn { 
             flex: 1 1 40%; font-size: 32px; padding: 15px; background: linear-gradient(#555, #222); color: white; 
             border: 3px solid #666; border-radius: 15px; cursor: pointer;
@@ -29,17 +36,24 @@
         
         /* 派手な演出用 */
         .start-btn { 
-            font-size: 24px; padding: 15px; background: linear-gradient(var(--primary), #b32d00); color: white; 
+            font-size: 22px; padding: 15px; background: linear-gradient(var(--primary), #b32d00); color: white; 
             border: none; border-radius: 50px; cursor: pointer; width: 100%; font-weight: bold; box-shadow: 0 5px 0 #802000;
         }
         .start-btn:active { transform: translateY(3px); box-shadow: none; }
 
-        /* 結果画面 */
-        #result-screen h2 { font-size: 30px; color: var(--primary); margin-bottom: 0; }
-        .atk-value { font-size: 70px; color: var(--secondary); text-shadow: 0 0 20px #ff8c00; margin: 10px 0; display: block; animation: zoomIn 0.5s; }
-        .rank-badge { font-size: 100px; font-style: italic; color: #fff; text-shadow: 0 0 30px #fff; display: block; margin-top: -20px; }
+        /* 結果画面の詳細表示 */
+        #result-screen h2 { font-size: 24px; color: var(--primary); margin-bottom: 0; }
+        .atk-value { font-size: 64px; color: var(--secondary); text-shadow: 0 0 20px #ff8c00; margin: 5px 0; display: block; }
+        .rank-badge { font-size: 80px; font-style: italic; color: #fff; text-shadow: 0 0 30px #fff; display: block; margin-top: -10px; }
         
-        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .detail-box { 
+            background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin: 20px 0; text-align: left; 
+            font-size: 14px; line-height: 1.6; border: 1px solid #444;
+        }
+        .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #444; padding: 3px 0; }
+        .detail-label { color: #aaa; }
+        .detail-value { color: #fff; font-weight: bold; }
+
         @keyframes shake { 0% { transform: translate(1px, 1px); } 10% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -2px); } }
         .shake { animation: shake 0.2s infinite; }
         .hidden { display: none !important; }
@@ -49,10 +63,20 @@
 
 <div id="game-container">
     <div id="start-screen">
-        <h1 style="color:var(--secondary)">MATH BATTLE</h1>
+        <h1 style="color:var(--secondary); margin-top:0;">MATH BATTLE</h1>
+        
+        <div class="rules-box">
+            <h4>- HOW TO PLAY -</h4>
+            <ul>
+                <li>30秒間でより多くの問題（敵）を解け！</li>
+                <li><span class="highlight">攻撃力の秘密：</span>「選択肢を増やす」「×や÷を含める」と、難易度ボーナスとして最終スコアに高い倍率がかかります。</li>
+                <li>伝説の<span class="highlight">【SSSランク】</span>は、最高難易度（4択＋全計算ON）にしないと到達不可能だ！</li>
+            </ul>
+        </div>
+
         <div class="settings-box">
             <div class="setting-group">
-                <h3>計算スキルを選択</h3>
+                <h3>計算スキル（四則演算）</h3>
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="op-add" checked> ＋</label>
                     <label><input type="checkbox" id="op-sub" checked> －</label>
@@ -80,11 +104,35 @@
     </div>
 
     <div id="result-screen" class="hidden">
-        <h2>TOTAL ATTACK POWER</h2>
+        <h2>ATTACK POWER</h2>
         <span id="final-atk" class="atk-value">0</span>
         <div id="rank-display" class="rank-badge">-</div>
-        <p id="multiplier-info" style="color:#aaa; font-size:12px;"></p>
-        <button class="start-btn" onclick="location.reload()">再挑戦する</button>
+        
+        <div class="detail-box">
+            <div class="detail-item">
+                <span class="detail-label">プレイ日時</span>
+                <span id="res-datetime" class="detail-value">-</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">正解問題数</span>
+                <span id="res-count" class="detail-value">-</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">計算設定</span>
+                <span id="res-ops" class="detail-value">-</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">選択肢数</span>
+                <span id="res-choices" class="detail-value">-</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">連続プレイ回数</span>
+                <span id="res-playcount" class="detail-value" style="color:var(--secondary)">-</span>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="retryGame()">もう一度バトル！</button>
+        <p style="margin-top:15px; font-size:14px; color:#aaa; cursor:pointer; text-decoration:underline;" onclick="location.reload()">設定を変更する</p>
     </div>
 </div>
 
@@ -95,20 +143,23 @@
     let timerId;
     let activeOps = [];
     let numChoices = 4;
+    let totalPlayCount = 0; // セッション内の連続プレイ数
 
     function startGame() {
         activeOps = [];
-        if (document.getElementById('op-add').checked) activeOps.push('+');
-        if (document.getElementById('op-sub').checked) activeOps.push('-');
+        if (document.getElementById('op-add').checked) activeOps.push('＋');
+        if (document.getElementById('op-sub').checked) activeOps.push('－');
         if (document.getElementById('op-mul').checked) activeOps.push('×');
         if (document.getElementById('op-div').checked) activeOps.push('÷');
 
         if (activeOps.length === 0) { alert('スキルを選んでください！'); return; }
 
         numChoices = parseInt(document.querySelector('input[name="choiceCount"]:checked').value);
+        totalPlayCount++;
 
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('result-screen').classList.add('hidden');
         
         score = 0;
         timeLeft = 30;
@@ -122,8 +173,13 @@
         }, 1000);
     }
 
+    function retryGame() {
+        startGame();
+    }
+
     function nextQuestion() {
-        const op = activeOps[Math.floor(Math.random() * activeOps.length)];
+        const opTag = activeOps[Math.floor(Math.random() * activeOps.length)];
+        const op = opTag.replace('＋','+').replace('－','-');
         let n1, n2;
 
         if (op === '+') { n1 = Math.floor(Math.random() * 20) + 1; n2 = Math.floor(Math.random() * 20) + 1; correctAnswer = n1 + n2; }
@@ -131,7 +187,7 @@
         else if (op === '×') { n1 = Math.floor(Math.random() * 9) + 2; n2 = Math.floor(Math.random() * 9) + 2; correctAnswer = n1 * n2; }
         else if (op === '÷') { n2 = Math.floor(Math.random() * 9) + 2; correctAnswer = Math.floor(Math.random() * 9) + 2; n1 = n2 * correctAnswer; }
 
-        document.getElementById('question').textContent = `${n1}${op.replace('×','×').replace('÷','÷')}${n2}`;
+        document.getElementById('question').textContent = `${n1} ${opTag} ${n2}`;
 
         let options = [correctAnswer];
         while (options.length < numChoices) {
@@ -165,21 +221,19 @@
         clearInterval(timerId);
         document.body.classList.remove('shake');
         document.getElementById('game-screen').classList.add('hidden');
-        document.getElementById('result-screen').classList.remove('hidden');
+        const resultScreen = document.getElementById('result-screen');
+        resultScreen.classList.remove('hidden');
 
-        // 攻撃力計算ロジック
-        let choiceMult = 1 + (numChoices - 2) * 0.2; // 2択:1.0, 3択:1.2, 4択:1.4
-        let opBonus = 0;
-        if (activeOps.includes('+')) opBonus += 0.1;
-        if (activeOps.includes('-')) opBonus += 0.2;
-        if (activeOps.includes('×')) opBonus += 0.4;
-        if (activeOps.includes('÷')) opBonus += 0.6;
-        
+        const now = new Date();
+        const dateStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        let choiceMult = 1 + (numChoices - 2) * 0.2;
+        let opBonus = activeOps.length * 0.1 + (activeOps.includes('×')?0.2:0) + (activeOps.includes('÷')?0.3:0);
         let finalAtk = Math.floor(score * 100 * choiceMult * (1 + opBonus));
         
-        // カウントアップ演出
         let currentAtk = 0;
         let step = Math.ceil(finalAtk / 30);
+        if (step === 0) step = 1;
         let counter = setInterval(() => {
             currentAtk += step;
             if (currentAtk >= finalAtk) {
@@ -190,7 +244,11 @@
             document.getElementById('final-atk').textContent = currentAtk.toLocaleString();
         }, 30);
 
-        document.getElementById('multiplier-info').textContent = `難易度倍率: x${(choiceMult * (1 + opBonus)).toFixed(2)}`;
+        document.getElementById('res-datetime').textContent = dateStr;
+        document.getElementById('res-count').textContent = `${score} 問`;
+        document.getElementById('res-ops').textContent = activeOps.join(' ');
+        document.getElementById('res-choices').textContent = `${numChoices} 択`;
+        document.getElementById('res-playcount').textContent = `${totalPlayCount} 回目`;
     }
 
     function showRank(atk) {
